@@ -1,58 +1,137 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ArcGIS GIS Dashboard</title>
-
-    <link rel="stylesheet"
-    href="https://js.arcgis.com/5.1/esri/themes/light/main.css">
-
-    <link rel="stylesheet" href="style.css">
-
-    <script type="module" src="https://js.arcgis.com/5.1/"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Florida Parcel CRA Checker</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+  <link rel="stylesheet" href="style.css?v=4" />
+  <script src="https://js.arcgis.com/4.29/"></script>
 </head>
-
 <body>
+  <div id="viewDiv"></div>
 
-    <header>
-        <h2>Florida Web Map</h2>
+  <!-- ============================================================
+       LAYERS PANE
+       ============================================================ -->
+  <aside id="layersPanel" class="ui-card" aria-label="Layers">
+    <header class="ui-card-header" id="layersHeader" role="button" tabindex="0" aria-expanded="true">
+      <span class="ui-card-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path d="M12 2 2 7l10 5 10-5-10-5zm0 7.5L4.5 6 12 3.5 19.5 6 12 9.5zM2 12l10 5 10-5M2 17l10 5 10-5"
+                fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Layers
+      </span>
+      <span class="ui-chevron" id="layersChevron">▾</span>
     </header>
 
-    <div class="dashboard">
+    <div class="ui-card-body" id="layersBody">
 
-        <!-- Layers Panel -->
-        <aside class="layers-panel">
+      <!-- Parcels -->
+      <div class="layer-row">
+        <div class="layer-top">
+          <label class="ui-toggle">
+            <input type="checkbox" id="chkParcels" checked />
+            <span class="ui-switch" aria-hidden="true"></span>
+            <span class="layer-name">Florida Parcels <em>(FDOR 2024)</em></span>
+          </label>
+          <span class="ui-swatch" style="background:#1f6feb;"></span>
+        </div>
+        <div class="opacity-row">
+          <span class="opa-label">Opacity</span>
+          <input type="range" id="opaParcels" min="0" max="100" value="55" aria-label="Parcel opacity" />
+          <span class="opa-val" id="opaParcelsVal">55%</span>
+        </div>
+      </div>
 
-            <div class="panel-header">
-                <h3>Contents</h3>
-                <span id="layerCount">0 Layers</span>
-            </div>
+      <!-- CRAs -->
+      <div class="layer-row">
+        <div class="layer-top">
+          <label class="ui-toggle">
+            <input type="checkbox" id="chkCRA" checked />
+            <span class="ui-switch" aria-hidden="true"></span>
+            <span class="layer-name">CRAs <em>(Statewide)</em></span>
+          </label>
+          <span class="ui-swatch ui-swatch-purple"></span>
+        </div>
+        <div class="opacity-row">
+          <span class="opa-label">Opacity</span>
+          <input type="range" id="opaCRA" min="0" max="100" value="50" aria-label="CRA opacity" />
+          <span class="opa-val" id="opaCRAVal">50%</span>
+        </div>
+        <div class="ui-legend">
+          <span class="ui-swatch ui-swatch-purple"></span>
+          <span>CRA boundary — purple</span>
+        </div>
+      </div>
 
-            <div class="panel-tools">
-                <input
-                    type="text"
-                    id="searchLayer"
-                    placeholder="Search layers..."
-                >
-            </div>
-
-            <div id="layersList">
-                <p class="loading">Loading layers...</p>
-            </div>
-
-        </aside>
-
-        <!-- Map -->
-        <main>
-            <div id="viewDiv"></div>
-        </main>
+      <!-- Highlight -->
+      <div class="layer-row">
+        <div class="layer-top">
+          <label class="ui-toggle">
+            <input type="checkbox" id="chkHighlight" checked />
+            <span class="ui-switch" aria-hidden="true"></span>
+            <span class="layer-name">Search highlight</span>
+          </label>
+          <span class="ui-swatch" style="background:#2e7d32;"></span>
+        </div>
+        <div class="opacity-row">
+          <span class="opa-label">Opacity</span>
+          <input type="range" id="opaHighlight" min="0" max="100" value="100" aria-label="Highlight opacity" />
+          <span class="opa-val" id="opaHighlightVal">100%</span>
+        </div>
+      </div>
 
     </div>
+  </aside>
 
-    <script type="module" src="script.js"></script>
+  <!-- ============================================================
+       SEARCH PANE (Parcel only + Basemap dropdown)
+       ============================================================ -->
+  <section id="searchPanel" class="ui-card" aria-label="Search parcels">
+    <header class="ui-card-header static">
+      <span class="ui-card-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Parcel CRA Checker
+      </span>
+    </header>
 
+    <div class="ui-card-body">
+      <!-- Basemap dropdown -->
+      <div class="search-group">
+        <label for="basemapSelect">Basemap</label>
+        <div class="search-row">
+          <select id="basemapSelect" class="ui-select">
+            <option value="streets-navigation-vector">ArcGIS Streets</option>
+            <option value="topo-vector">ArcGIS Topographic</option>
+            <option value="satellite">ArcGIS Imagery (Satellite)</option>
+            <option value="google-satellite">Google Satellite</option>
+            <option value="google-streets">Google Streets</option>
+            <option value="osm">OpenStreetMap</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Parcel ID search (address search removed) -->
+      <div class="search-group">
+        <label for="parcelInput">Parcel ID</label>
+        <div class="search-row">
+          <input type="text" id="parcelInput" placeholder="e.g., 01-1234-567-8900" autocomplete="off" />
+          <button id="parcelSearchBtn" class="ui-btn" type="button">Search</button>
+        </div>
+      </div>
+
+      <div id="resultPanel" class="ui-result">
+        <p>Enter a parcel number to begin.</p>
+      </div>
+    </div>
+  </section>
+
+  <script src="script.js?v=4"></script>
 </body>
 </html>
